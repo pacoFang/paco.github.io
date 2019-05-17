@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>paco的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="jvm回顾1.构成:线程共享(方法区,堆),线程私有(虚拟机栈,本地方法栈,程序计数器)    1)本地方法栈,调用本地方法    2)程序计数器,保存指向方法区中的方法字节码的指针,通过执行引擎读取指令执行    3)方法区,保存类方法的字节码,包括所有字段,方法,以及一些特殊的方法如构造函数,接口代码    4)栈内存,生命周期和线程一样.存储本地变量(入参,出参以及方法内部变量),栈操作(出">
+<meta property="og:type" content="article">
+<meta property="og:title" content="paco的博客">
+<meta property="og:url" content="http://yoursite.com/2019/05/17/jvm/index.html">
+<meta property="og:site_name" content="paco的博客">
+<meta property="og:description" content="jvm回顾1.构成:线程共享(方法区,堆),线程私有(虚拟机栈,本地方法栈,程序计数器)    1)本地方法栈,调用本地方法    2)程序计数器,保存指向方法区中的方法字节码的指针,通过执行引擎读取指令执行    3)方法区,保存类方法的字节码,包括所有字段,方法,以及一些特殊的方法如构造函数,接口代码    4)栈内存,生命周期和线程一样.存储本地变量(入参,出参以及方法内部变量),栈操作(出">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-05-16T23:00:28.622Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="paco的博客">
+<meta name="twitter:description" content="jvm回顾1.构成:线程共享(方法区,堆),线程私有(虚拟机栈,本地方法栈,程序计数器)    1)本地方法栈,调用本地方法    2)程序计数器,保存指向方法区中的方法字节码的指针,通过执行引擎读取指令执行    3)方法区,保存类方法的字节码,包括所有字段,方法,以及一些特殊的方法如构造函数,接口代码    4)栈内存,生命周期和线程一样.存储本地变量(入参,出参以及方法内部变量),栈操作(出">
+  
+    <link rel="alternate" href="/atom.xml" title="paco的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">paco的博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-jvm" class="article article-type-post" itemscope="" itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/17/jvm/" class="article-date">
+  <time datetime="2019-05-16T23:00:28.622Z" itemprop="datePublished">2019-05-17</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>jvm回顾<br>1.构成:线程共享(方法区,堆),线程私有(虚拟机栈,本地方法栈,程序计数器)<br>    1)本地方法栈,调用本地方法<br>    2)程序计数器,保存指向方法区中的方法字节码的指针,通过执行引擎读取指令执行<br>    3)方法区,保存类方法的字节码,包括所有字段,方法,以及一些特殊的方法如构造函数,接口代码<br>    4)栈内存,生命周期和线程一样.存储本地变量(入参,出参以及方法内部变量),栈操作(出栈入栈操作),<br>    栈帧数据(类文件,方法等)<br>    5)堆内存,保存应用的对象和数据,线程共享,是jvm中最大的区域.<br>        (1)新生区:包括伊甸园区,幸存0区和幸存1区,对象创建,成长,消亡的区域<br>        (2)养老区:保存从新生区中筛选出来的对象(oom:OutOfMemoryError)<br>        (3)永久存储区:    是一个常驻内存区域,用于存放运行环境必备的类信息,如jdk自带的数据,<br>            不会有gc,除非关闭jvm(oom:PermGenSpace,jdk8没有永久代)<br>        minor gc:伊甸园区–&gt;幸存者0区–&gt;幸存者1区–&gt;养老区<br>        full gc(major gc):养老区 gc</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/05/17/jvm/" data-id="cjvr9eie10004uwqy6m129w97" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/05/17/linux虚拟机_静态ip/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          (no title)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/05/17/mysql-canal-kafka/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title"></div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/05/17/mysql-week/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/zookeeper分布式锁/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/netty/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/python-dataframe/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/proxy-server/">(no title)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 pacoFang<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

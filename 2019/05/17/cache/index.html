@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>paco的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="数据库和缓存双写一致性问题 如何保证数据库和缓存的双写一致性?1.给缓存设置过期时间,可以保证最终一致性.缺点:时效太长.2.先更新数据库,在更新缓存.    缺点1:可能会出现并发问题.如A写入线程更新完数据库后,B写入线程再次更新数据库并更新缓存,A线程        会将缓存数据更新回旧数据    缺点2:缓存更新太过于频繁.如果读多写少,写请求还未到,缓存可能已经更新过很多次了.3.先删除">
+<meta property="og:type" content="article">
+<meta property="og:title" content="paco的博客">
+<meta property="og:url" content="http://yoursite.com/2019/05/17/cache/index.html">
+<meta property="og:site_name" content="paco的博客">
+<meta property="og:description" content="数据库和缓存双写一致性问题 如何保证数据库和缓存的双写一致性?1.给缓存设置过期时间,可以保证最终一致性.缺点:时效太长.2.先更新数据库,在更新缓存.    缺点1:可能会出现并发问题.如A写入线程更新完数据库后,B写入线程再次更新数据库并更新缓存,A线程        会将缓存数据更新回旧数据    缺点2:缓存更新太过于频繁.如果读多写少,写请求还未到,缓存可能已经更新过很多次了.3.先删除">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-05-16T23:00:28.621Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="paco的博客">
+<meta name="twitter:description" content="数据库和缓存双写一致性问题 如何保证数据库和缓存的双写一致性?1.给缓存设置过期时间,可以保证最终一致性.缺点:时效太长.2.先更新数据库,在更新缓存.    缺点1:可能会出现并发问题.如A写入线程更新完数据库后,B写入线程再次更新数据库并更新缓存,A线程        会将缓存数据更新回旧数据    缺点2:缓存更新太过于频繁.如果读多写少,写请求还未到,缓存可能已经更新过很多次了.3.先删除">
+  
+    <link rel="alternate" href="/atom.xml" title="paco的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">paco的博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-cache" class="article article-type-post" itemscope="" itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/17/cache/" class="article-date">
+  <time datetime="2019-05-16T23:00:28.621Z" itemprop="datePublished">2019-05-17</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>数据库和缓存双写一致性问题</p>
+<p>如何保证数据库和缓存的双写一致性?<br>1.给缓存设置过期时间,可以保证最终一致性.缺点:时效太长.<br>2.先更新数据库,在更新缓存.<br>    缺点1:可能会出现并发问题.如A写入线程更新完数据库后,B写入线程再次更新数据库并更新缓存,A线程<br>        会将缓存数据更新回旧数据<br>    缺点2:缓存更新太过于频繁.如果读多写少,写请求还未到,缓存可能已经更新过很多次了.<br>3.先删除缓存,再更新数据库.<br>    缺点:同上,可能会出现并发问题.A写入线程先删缓存.B读取线程直接读取数据库并更新缓存,会将缓存更<br>        新为旧值.<br>    优化:可以采用双删策略,即更新数据库后等待一小段时间(如果是读写分离读会有延迟)再次删除缓存,不过<br>        会降低吞吐量.<br>4.先更新数据库,再删除缓存.<br>    缺点,依然有同3的缺点.但缓存失效时,A读取线程获取数据库中旧值,B写入线程写入数据库并删除缓存,<br>    A在缓存中写入旧值.不过读操作时间远低于写,出现几率低.解决办法同上</p>
+<p>注意:假如缓存删除失败怎么办?<br>    假如重试机制,如果删除失败,将key放入消息队列中,通过异步程序重试.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/05/17/cache/" data-id="cjvr9eidv0000uwqyiy4mjb1b" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/05/17/java-time-zone/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          (no title)
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/05/17/mysql-week/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/zookeeper分布式锁/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/netty/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/python-dataframe/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/proxy-server/">(no title)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 pacoFang<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

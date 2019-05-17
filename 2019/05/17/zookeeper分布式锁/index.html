@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>paco的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="一 实现原理:    1.zookeeper的有序节点,比如在/lock下创建有序节点        node-000000,下一个节点是node-0000001    2.zookeeper的临时节点,会话结束或者超时之后zookeeper        自动删除节点    3.事件监听,当节点变化时,如创建,删除,修改,子节点变更等操        作时会通知客户端    4.zookeepe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="paco的博客">
+<meta property="og:url" content="http://yoursite.com/2019/05/17/zookeeper分布式锁/index.html">
+<meta property="og:site_name" content="paco的博客">
+<meta property="og:description" content="一 实现原理:    1.zookeeper的有序节点,比如在/lock下创建有序节点        node-000000,下一个节点是node-0000001    2.zookeeper的临时节点,会话结束或者超时之后zookeeper        自动删除节点    3.事件监听,当节点变化时,如创建,删除,修改,子节点变更等操        作时会通知客户端    4.zookeepe">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-05-16T23:00:28.624Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="paco的博客">
+<meta name="twitter:description" content="一 实现原理:    1.zookeeper的有序节点,比如在/lock下创建有序节点        node-000000,下一个节点是node-0000001    2.zookeeper的临时节点,会话结束或者超时之后zookeeper        自动删除节点    3.事件监听,当节点变化时,如创建,删除,修改,子节点变更等操        作时会通知客户端    4.zookeepe">
+  
+    <link rel="alternate" href="/atom.xml" title="paco的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">paco的博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-zookeeper分布式锁" class="article article-type-post" itemscope="" itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/17/zookeeper分布式锁/" class="article-date">
+  <time datetime="2019-05-16T23:00:28.624Z" itemprop="datePublished">2019-05-17</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>一 实现原理:<br>    1.zookeeper的有序节点,比如在/lock下创建有序节点<br>        node-000000,下一个节点是node-0000001<br>    2.zookeeper的临时节点,会话结束或者超时之后zookeeper<br>        自动删除节点<br>    3.事件监听,当节点变化时,如创建,删除,修改,子节点变更等操<br>        作时会通知客户端<br>    4.zookeeper操作的原子性,避免并发问题<br> 实现步骤:<br>    1.连接zookeeper,创建临时有序的子节点.<br>    2.判断是否是最小的子节点,如果不是,监听此父节点的变更消息,<br>        直到获取锁.<br>    3.执行业务代码.<br>    4.删除该节点.<br>    注意:当最小节点释放时,最好只通知下一个最小节点,可以避免羊群<br> 效应</p>
+<p>二 实现:通过curator-recipes实现<br>        <dependency><br>            <groupid>org.apache.curator</groupid><br>            <artifactid>curator-recipes</artifactid><br>            <version>3.0.0</version><br>        </dependency><br>注意.如果jar包版本和zookeeper版本不同,会报异常<br>Exception in thread “main” org.apache.zookeeper<br>.KeeperException$UnimplementedException:<br>KeeperErrorCode = Unimplemented for<br>/curator/lock/_c_e29cea17-ee1f-431d-<br>…</p>
+<p>三 curator:curator是Netflix公司开源的一个zookeeper客户端,<br>    实现了操作zookeeper节点,锁,leader选举等功能</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/05/17/zookeeper分布式锁/" data-id="cjvr9eie5000auwqy3kfhajql" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/05/17/mysql-week/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          (no title)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/05/17/netty/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title"></div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/05/17/mysql-week/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/zookeeper分布式锁/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/netty/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/python-dataframe/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/17/proxy-server/">(no title)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 pacoFang<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
